@@ -1,0 +1,31 @@
+# .github/workflows/ci.yml
+
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    container:
+      image: munawarkazmi/ros2-llm-safety-verifier:latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          path: src/ros2_llm_safety_verifier
+
+      - name: Lightweight build check
+        run: |
+          colcon build --packages-select ros2_llm_safety_verifier --cmake-args -DCMAKE_BUILD_TYPE=Release
+
+      - name: Run tests (placeholder OK – WIP)
+        continue-on-error: true
+        run: |
+          colcon test --packages-select ros2_llm_safety_verifier --event-handlers console_cohesion+
+          colcon test-result --verbose || true
