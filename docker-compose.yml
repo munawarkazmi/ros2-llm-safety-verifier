@@ -1,0 +1,28 @@
+# docker-compose.yml
+# One command: docker compose up --build
+# Works on laptop (x86_64) and Jetson (arm64) instantly
+
+version: "3.9"
+
+services:
+  ros2-llm-verifier:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      # platform: linux/arm64   # uncomment on Jetson if needed
+    image: munawarkazmi/ros2-llm-safety-verifier:latest
+    container_name: ros2-llm-safety-verifier
+    hostname: llm-verifier
+    privileged: true   # required only for real robot camera / Gazebo GPU; remove if pure simulation
+    network_mode: host
+    ipc: host
+    volumes:
+      - .:/ros2_ws/src/ros2-llm-safety-verifier
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    environment:
+      - DISPLAY=${DISPLAY:-:0}
+      - QT_X11_NO_MITSHM=1
+      - ROS_DOMAIN_ID=42
+    stdin_open: true
+    tty: true
+    command: bash
