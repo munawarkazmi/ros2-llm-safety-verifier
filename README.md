@@ -10,6 +10,8 @@ Sometimes they hallucinate: a goal inside a wall, a path through a person, a way
 never existed. This project puts a deterministic verifier between the LLM and Nav2, so
 unsafe commands are intercepted in real time, before a wheel turns.
 
+![Architecture](docs/architecture.svg)
+
 ## Hardware-validated results (103 real trials, TurtleBot3 + Jetson Orin Nano)
 
 | Metric | Value | Notes |
@@ -22,6 +24,8 @@ unsafe commands are intercepted in real time, before a wheel turns.
 The headline finding: an unverified LLM planner fails almost half the time in a real
 environment. A sub-50 ms deterministic check in front of it recovers reliability to 91%
 while rejecting less than 4% of good plans.
+
+![Results](docs/results.png)
 
 ## What this repository provides today
 

@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 380" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0f2f52"/>
+    </marker>
+    <marker id="arrRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#b23b3b"/>
+    </marker>
+  </defs>
+  <rect width="980" height="380" fill="#ffffff"/>
+  <text x="490" y="34" text-anchor="middle" font-size="19" font-weight="700" fill="#0f2f52">Where the verifier sits: between the language model and the robot</text>
+
+  <!-- LLM box -->
+  <rect x="40" y="120" width="200" height="110" rx="14" fill="#f3ecd8" stroke="#c8a24c" stroke-width="2"/>
+  <text x="140" y="155" text-anchor="middle" font-size="16" font-weight="700" fill="#0f2f52">LLM planner</text>
+  <text x="140" y="178" text-anchor="middle" font-size="12.5" fill="#4b5a6a">Llama-3.1-8B, quantized</text>
+  <text x="140" y="196" text-anchor="middle" font-size="12.5" fill="#4b5a6a">goals and trajectories</text>
+  <text x="140" y="214" text-anchor="middle" font-size="12.5" fill="#b23b3b">may hallucinate</text>
+
+  <!-- Verifier box -->
+  <rect x="340" y="95" width="280" height="160" rx="14" fill="#0f2f52"/>
+  <text x="480" y="128" text-anchor="middle" font-size="16" font-weight="700" fill="#d8b74e">Safety verifier</text>
+  <text x="480" y="150" text-anchor="middle" font-size="12.5" fill="#dfe7ef">deterministic, under 50 ms</text>
+  <text x="480" y="176" text-anchor="middle" font-size="12.5" fill="#dfe7ef">costmap collision check</text>
+  <text x="480" y="196" text-anchor="middle" font-size="12.5" fill="#dfe7ef">kinematic feasibility</text>
+  <text x="480" y="216" text-anchor="middle" font-size="12.5" fill="#dfe7ef">workspace bounds</text>
+  <text x="480" y="240" text-anchor="middle" font-size="12" fill="#8ea0b2">Jetson Orin Nano</text>
+
+  <!-- Nav2 box -->
+  <rect x="720" y="120" width="220" height="110" rx="14" fill="#eef3f8" stroke="#0f2f52" stroke-width="2"/>
+  <text x="830" y="158" text-anchor="middle" font-size="16" font-weight="700" fill="#0f2f52">Nav2 controller</text>
+  <text x="830" y="182" text-anchor="middle" font-size="12.5" fill="#4b5a6a">executes on TurtleBot3</text>
+  <text x="830" y="202" text-anchor="middle" font-size="12.5" fill="#4b5a6a">only verified commands</text>
+
+  <!-- arrows -->
+  <line x1="240" y1="175" x2="332" y2="175" stroke="#0f2f52" stroke-width="2.5" marker-end="url(#arr)"/>
+  <text x="286" y="163" text-anchor="middle" font-size="12" fill="#4b5a6a">proposed plan</text>
+  <line x1="620" y1="175" x2="712" y2="175" stroke="#0f2f52" stroke-width="2.5" marker-end="url(#arr)"/>
+  <text x="666" y="163" text-anchor="middle" font-size="12" fill="#22754a" font-weight="700">safe: pass</text>
+
+  <!-- reject path -->
+  <path d="M 480 255 L 480 310 L 148 310 L 148 238" fill="none" stroke="#b23b3b" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#arrRed)"/>
+  <text x="314" y="300" text-anchor="middle" font-size="12.5" font-weight="700" fill="#b23b3b">unsafe: rejected, replan requested (94% of hallucinations caught)</text>
+
+  <!-- results strip -->
+  <text x="490" y="360" text-anchor="middle" font-size="13" fill="#4b5a6a">103 hardware trials: navigation success 57% without the verifier, 91% with it</text>
+</svg>
