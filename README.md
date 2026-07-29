@@ -12,19 +12,11 @@ deterministic verifier between the LLM and Nav2 - costmap collision checks,
 kinematic feasibility, workspace bounds - so unsafe commands are intercepted
 before a wheel turns.
 
-> **Status (July 2026): design stage - retraction of earlier claims.**
->
-> Earlier versions of this README reported hardware-validated results (94% of
-> unsafe trajectories caught, 103 TurtleBot3 trials, latency and success-rate
-> figures). Those numbers were not backed by committed code, data, or
-> completed experiments - this repository has never contained an
-> implementation - and I have retracted them. I hold my repositories to the
-> standard that every quantitative claim must be reproducible from what is
-> committed; this one did not meet it.
->
-> What exists today is the design below and a containerized development
-> environment. Results will only ever reappear here together with the code,
-> the raw data, and the harness that produce them.
+> **Retraction note (July 2026).** Earlier versions of this README reported
+> hardware-validated results (94% of unsafe trajectories caught, 103
+> TurtleBot3 trials) that no committed code, data, or completed experiment
+> supported; they were retracted. Every number below is produced by committed
+> code and reproduces deterministically - see [Evaluation](#evaluation-seeded-offline-harness).
 
 ## Design
 
@@ -40,28 +32,71 @@ the live costmap and robot model:
 
 Rejected plans trigger a replan request instead of reaching the controller.
 
-## What this repository provides today
+## Evaluation (seeded offline harness)
 
-A containerized ROS 2 Humble + Nav2 development environment for the project,
-built by CI on every commit:
+The verifier is exercised by a deterministic harness
+([core/eval/eval_main.cpp](core/eval/eval_main.cpp)): 50 seeded procedural
+indoor maps (12 m x 9 m at 0.05 m), oracle-verified safe trajectories, and six
+classes of *constructed* hallucinations - a goal inside a wall, a straight
+line through walls, an off-map waypoint, a teleport jump, a route into
+unmapped space, and a gap too narrow for the robot's footprint. Every unsafe
+label is confirmed by an independent reference checker (4x finer sampling)
+before the case counts.
+
+Output of `core/build/eval --maps 50 --seed 42` (verbatim, TurtleBot3 Burger
+parameter profile):
+
+```text
+verifier eval: seed 42, 50 maps, 2071 cases (599 safe, 1472 unsafe), 29 generator retries skipped
+  goal_in_wall    caught 250 / 250
+  narrow_gap      caught 250 / 250
+  off_map         caught 250 / 250
+  teleport        caught 222 / 222
+  unknown_region  caught 250 / 250
+  wall_through    caught 250 / 250
+unsafe caught: 1472 / 1472
+safe rejected (false positives): 0 / 599
+latency: median 10.3 us  p95 44.1 us  p99 77.0 us  max 1251.5 us
+PASS: all unsafe caught, no false positives
+```
+
+Read this precisely: it says the deterministic checks catch **100% of these
+six constructed violation classes with zero false positives on
+oracle-verified safe paths**, at microsecond latency (measured on x86-64
+WSL2; the harness re-runs in CI on every push and fails on any miss). It does
+*not* yet say anything about real LLM outputs or real hardware - that is the
+next step below, and those numbers will appear only with the data that
+produces them. Case-level data: [reports/results/verifier_eval.csv](reports/results/verifier_eval.csv).
+
+Correctness of the verifier itself is tested in
+[core/tests/test_verifier.cpp](core/tests/test_verifier.cpp): unit cases per
+violation class plus a fuzz invariant - every trajectory the verifier calls
+safe is re-checked by the finer-sampled oracle (1,914 safe verdicts
+cross-checked, printed by the test).
+
+## Quick start (no ROS required)
 
 ```bash
 git clone https://github.com/munawarkazmi/ros2-llm-safety-verifier.git
 cd ros2-llm-safety-verifier
-docker compose up --build
+make -C core test
+make -C core eval
+core/build/eval --maps 50 --seed 42 --out reports/results/verifier_eval.csv
 ```
 
-The compose file mounts the repository into the container workspace, so the
-verifier package can be developed and colcon-built inside it as it lands.
+A containerized ROS 2 Humble + Nav2 environment is also provided
+(`docker compose up --build`, image built by CI); the compose file mounts the
+repository into the container workspace for the upcoming ROS integration.
 
 ## Roadmap
 
-1. Verifier node (C++, subscribing to the LLM planner's proposals, publishing
-   verified goals to Nav2) with unit tests against recorded costmaps.
-2. A seeded evaluation harness with injected hallucination cases, so
-   catch-rate and false-positive numbers are reproducible offline before any
-   hardware claim is made.
-3. Hardware trials (TurtleBot3 + Jetson Orin Nano), published together with
+1. **Done - offline evaluation harness** (above): reproducible catch-rate and
+   false-positive numbers on constructed hallucination classes.
+2. Verifier node (C++, subscribing to the LLM planner's proposals, publishing
+   verified goals to Nav2), reusing the tested core.
+3. Evaluation against real LLM-generated trajectories (prompted plans over
+   these maps), published with the prompts and raw outputs.
+4. Hardware trials (TurtleBot3 + Jetson Orin Nano), published together with
    the raw rosbags and analysis scripts.
 
 ## License

@@ -1,0 +1,11 @@
+verifier eval: seed 42, 50 maps, 2071 cases (599 safe, 1472 unsafe), 29 generator retries skipped
+  goal_in_wall    caught 250 / 250
+  narrow_gap      caught 250 / 250
+  off_map         caught 250 / 250
+  teleport        caught 222 / 222
+  unknown_region  caught 250 / 250
+  wall_through    caught 250 / 250
+unsafe caught: 1472 / 1472
+safe rejected (false positives): 0 / 599
+latency: median 10.3 us  p95 44.1 us  p99 77.0 us  max 1251.5 us
+PASS: all unsafe caught, no false positives
