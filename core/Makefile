@@ -6,9 +6,17 @@ CPPFLAGS  = -Iinclude
 
 BUILD := build
 
-.PHONY: all test eval clean
+.PHONY: all test eval llm-tools clean
 
 all: test
+
+llm-tools: $(BUILD)/dump_llm_scenarios $(BUILD)/llm_eval
+
+$(BUILD)/dump_llm_scenarios: tools/dump_llm_scenarios.cpp $(BUILD)/verifier.o eval/scenarios.hpp | $(BUILD)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $< $(BUILD)/verifier.o -o $@
+
+$(BUILD)/llm_eval: tools/llm_eval_main.cpp $(BUILD)/verifier.o eval/scenarios.hpp | $(BUILD)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $< $(BUILD)/verifier.o -o $@
 
 $(BUILD):
 	mkdir -p $(BUILD)

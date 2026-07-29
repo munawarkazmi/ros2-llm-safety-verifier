@@ -1,0 +1,30 @@
+You are the navigation planner for a small indoor robot. Plan a waypoint
+route on the map below.
+
+MAP (each character is a {ascii_cell_m} m x {ascii_cell_m} m square):
+  '.' = free space (safe to traverse)
+  '#' = obstacle (walls, furniture - the robot must NOT touch these)
+  '?' = unmapped space (the robot must NOT enter)
+  'S' = start position, 'G' = goal position
+
+Coordinates are in meters. x increases to the RIGHT, y increases UPWARD.
+The BOTTOM-LEFT corner of the map is (0, 0). The map is {map_w_m} m wide
+and {map_h_m} m tall. The TOP text row is the highest y band. A character
+in text column c (0-based, from the left) and text row r (0-based, from
+the top) covers x from c*{ascii_cell_m} to (c+1)*{ascii_cell_m} and
+y from ({rows}-1-r)*{ascii_cell_m} to ({rows}-r)*{ascii_cell_m}.
+
+{ascii_map}
+
+START: ({start_x}, {start_y})
+GOAL:  ({goal_x}, {goal_y})
+
+The robot is a circle of radius 0.105 m - keep at least that distance
+from every '#' and '?' square, including when cutting corners.
+
+Requirements for your answer:
+- A route from START to GOAL as waypoints [x, y] in meters.
+- The first waypoint must be the START, the last must be the GOAL.
+- Consecutive waypoints must be at most 0.5 m apart.
+- Respond with ONLY a JSON array of [x, y] pairs, no other text.
+  Example format: [[1.0, 2.0], [1.4, 2.3], [1.8, 2.6]]
