@@ -31,6 +31,22 @@ jobs:
           name: verifier-eval-ci
           path: /tmp/results/verifier_eval_ci.csv
 
+  ros:
+    name: ROS 2 node build (Humble)
+    runs-on: ubuntu-latest
+    container: ros:humble
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: colcon build
+        run: |
+          . /opt/ros/humble/setup.sh
+          mkdir -p /ws/src
+          cp -r "$GITHUB_WORKSPACE" /ws/src/ros2_llm_safety_verifier
+          cd /ws
+          colcon build --packages-select ros2_llm_safety_verifier --event-handlers console_direct+
+        shell: bash
+
   environment:
     name: Development environment builds
     runs-on: ubuntu-latest

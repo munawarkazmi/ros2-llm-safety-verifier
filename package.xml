@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+
+  <name>ros2_llm_safety_verifier</name>
+  <version>0.2.0</version>
+  <description>
+    Deterministic safety verifier between an LLM planner and Nav2:
+    trajectory and goal proposals are checked against the costmap
+    (footprint collision, continuity, bounds, unknown space) before
+    anything reaches the controller. The checks live in a ROS-free
+    core with an oracle-labeled evaluation harness.
+  </description>
+
+  <maintainer email="munawarsaeedkazmi1@gmail.com">Munawar Kazmi</maintainer>
+  <license>MIT</license>
+  <author email="munawarsaeedkazmi1@gmail.com">Munawar Kazmi</author>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>nav_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>std_msgs</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+
+</package>

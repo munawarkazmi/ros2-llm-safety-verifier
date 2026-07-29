@@ -86,14 +86,46 @@ core/build/eval --maps 50 --seed 42 --out reports/results/verifier_eval.csv
 
 A containerized ROS 2 Humble + Nav2 environment is also provided
 (`docker compose up --build`, image built by CI); the compose file mounts the
-repository into the container workspace for the upcoming ROS integration.
+repository into the container workspace.
+
+## ROS 2 node
+
+`verifier_node` wraps the tested core as the runtime gate
+([src/verifier_node.cpp](src/verifier_node.cpp)); the package
+colcon-builds against ROS 2 Humble in CI on every push. It is fail-safe by
+construction: nothing is forwarded until a costmap has arrived and every
+check passes.
+
+| Topic | Type | Direction | Purpose |
+| --- | --- | --- | --- |
+| `costmap` | `nav_msgs/OccupancyGrid` | sub (transient_local) | remap to `/global_costmap/costmap` |
+| `proposed_path` | `nav_msgs/Path` | sub | trajectory proposed by the LLM |
+| `proposed_goal` | `geometry_msgs/PoseStamped` | sub | goal proposed by the LLM |
+| `verified_path` | `nav_msgs/Path` | pub | forwarded only when safe |
+| `verified_goal` | `geometry_msgs/PoseStamped` | pub | forwarded only when safe |
+| `rejections` | `std_msgs/String` | pub | violation and waypoint for every rejection |
+
+```bash
+# inside a ROS 2 Humble workspace containing this repo (or the compose container)
+colcon build --packages-select ros2_llm_safety_verifier
+source install/setup.bash
+ros2 launch ros2_llm_safety_verifier verifier_launch.py
+```
+
+Parameters (see [config/verifier_params.yaml](config/verifier_params.yaml))
+mirror the core profile: `robot_radius`, `max_segment_length`, `sample_step`,
+`min_turning_radius` (0 disables curvature for differential drive),
+`allow_unknown`, `occupied_threshold`. Frames are compared textually; TF
+transformation of proposals is future work. The node is build-verified in CI
+and exercised against the core's tested checks; a live Nav2 integration test
+is part of the hardware-trial roadmap step.
 
 ## Roadmap
 
 1. **Done - offline evaluation harness** (above): reproducible catch-rate and
    false-positive numbers on constructed hallucination classes.
-2. Verifier node (C++, subscribing to the LLM planner's proposals, publishing
-   verified goals to Nav2), reusing the tested core.
+2. **Done - verifier node**: the runtime gate between `proposed_*` and
+   `verified_*` topics, reusing the tested core (build-verified in CI).
 3. Evaluation against real LLM-generated trajectories (prompted plans over
    these maps), published with the prompts and raw outputs.
 4. Hardware trials (TurtleBot3 + Jetson Orin Nano), published together with

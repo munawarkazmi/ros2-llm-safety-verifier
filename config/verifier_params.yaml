@@ -1,0 +1,11 @@
+# config/verifier_params.yaml
+# Parameter profile for the llm_safety_verifier node.
+# Defaults match a TurtleBot3 Burger (differential drive).
+llm_safety_verifier:
+  ros__parameters:
+    robot_radius: 0.105        # m, footprint circle
+    max_segment_length: 0.5    # m, larger jumps are rejected as discontinuities
+    sample_step: 0.02          # m, collision sampling pitch along segments
+    min_turning_radius: 0.0    # m, 0 disables the curvature check (diff drive)
+    allow_unknown: false       # reject routes through unmapped space
+    occupied_threshold: 65     # OccupancyGrid value treated as lethal
