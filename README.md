@@ -5,31 +5,45 @@
 [![CI](https://github.com/munawarkazmi/ros2-llm-safety-verifier/actions/workflows/ci.yml/badge.svg)](https://github.com/munawarkazmi/ros2-llm-safety-verifier/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Large language models are increasingly asked to produce navigation goals and trajectories.
-Sometimes they hallucinate: a goal inside a wall, a path through a person, a waypoint that
-never existed. This project puts a deterministic verifier between the LLM and Nav2, so
-unsafe commands are intercepted in real time, before a wheel turns.
+Large language models are increasingly asked to produce navigation goals and
+trajectories. Sometimes they hallucinate: a goal inside a wall, a path through
+a person, a waypoint that never existed. The idea of this project is a
+deterministic verifier between the LLM and Nav2 - costmap collision checks,
+kinematic feasibility, workspace bounds - so unsafe commands are intercepted
+before a wheel turns.
+
+> **Status (July 2026): design stage - retraction of earlier claims.**
+>
+> Earlier versions of this README reported hardware-validated results (94% of
+> unsafe trajectories caught, 103 TurtleBot3 trials, latency and success-rate
+> figures). Those numbers were not backed by committed code, data, or
+> completed experiments - this repository has never contained an
+> implementation - and I have retracted them. I hold my repositories to the
+> standard that every quantitative claim must be reproducible from what is
+> committed; this one did not meet it.
+>
+> What exists today is the design below and a containerized development
+> environment. Results will only ever reappear here together with the code,
+> the raw data, and the harness that produce them.
+
+## Design
 
 ![Architecture](docs/architecture.svg)
 
-## Hardware-validated results (103 real trials, TurtleBot3 + Jetson Orin Nano)
+The verifier sits between the LLM planner and the Nav2 controller. A proposed
+goal or trajectory passes only if it clears three deterministic checks against
+the live costmap and robot model:
 
-| Metric | Value | Notes |
-| --- | --- | --- |
-| Unsafe trajectories caught | **94%** | under 50 ms verification latency |
-| False-positive rate | 3.2% | threshold is tunable |
-| End-to-end latency | under 1.2 s | quantized Llama-3.1-8B plus verifier |
-| Navigation success, verifier ON | **91%** | versus 57% for the raw LLM (95% CI: 85 to 95%) |
+1. **Collision** - no pose intersects a lethal or inflated obstacle,
+2. **Kinematic feasibility** - curvature and velocity within the platform's limits,
+3. **Workspace bounds** - every waypoint inside the mapped, known region.
 
-The headline finding: an unverified LLM planner fails almost half the time in a real
-environment. A sub-50 ms deterministic check in front of it recovers reliability to 91%
-while rejecting less than 4% of good plans.
-
-![Results](docs/results.png)
+Rejected plans trigger a replan request instead of reaching the controller.
 
 ## What this repository provides today
 
-A reproducible development environment for the project, identical on x86_64 and Jetson arm64:
+A containerized ROS 2 Humble + Nav2 development environment for the project,
+built by CI on every commit:
 
 ```bash
 git clone https://github.com/munawarkazmi/ros2-llm-safety-verifier.git
@@ -37,17 +51,18 @@ cd ros2-llm-safety-verifier
 docker compose up --build
 ```
 
-Continuous integration keeps the environment building on every commit.
+The compose file mounts the repository into the container workspace, so the
+verifier package can be developed and colcon-built inside it as it lands.
 
-## Publication status
+## Roadmap
 
-The verifier node, the full quantitative failure-mode study, the 103 raw trial bags with
-CSV summaries, and the demonstration videos are being prepared for public release alongside
-a planned Nav2 integration proposal. Watch or star the repository to be notified when they
-land; the results above come from the completed hardware trials that the release will
-document in full.
-
-Questions and feedback are welcome through Issues.
+1. Verifier node (C++, subscribing to the LLM planner's proposals, publishing
+   verified goals to Nav2) with unit tests against recorded costmaps.
+2. A seeded evaluation harness with injected hallucination cases, so
+   catch-rate and false-positive numbers are reproducible offline before any
+   hardware claim is made.
+3. Hardware trials (TurtleBot3 + Jetson Orin Nano), published together with
+   the raw rosbags and analysis scripts.
 
 ## License
 
