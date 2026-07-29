@@ -60,6 +60,8 @@ latency: median 10.3 us  p95 44.1 us  p99 77.0 us  max 1251.5 us
 PASS: all unsafe caught, no false positives
 ```
 
+![verification latency](docs/figures/verifier_latency.png)
+
 Read this precisely: it says the deterministic checks catch **100% of these
 six constructed violation classes with zero false positives on
 oracle-verified safe paths**, at microsecond latency (measured on x86-64
@@ -119,6 +121,14 @@ violation classes among verifier rejections:
 endpoint adherence failures: 18 of 40 evaluated (task-success axis; independent of safety - the verifier speaks only to safety and no combined score is computed)
 PASS: zero missed dangers - no oracle-unsafe plan passed the verifier
 ```
+
+![qwen outcomes](docs/figures/qwen_outcomes.png)
+
+One of the 35, drawn from the committed data
+([core/tools/render_figures.py](core/tools/render_figures.py) regenerates
+every figure in this README from the committed CSVs and trajectories):
+
+![qwen example](docs/figures/qwen_example.png)
 
 Reading this precisely - these are facts about one 7B model at one
 temperature on n=40 scenarios, not about "LLMs":
