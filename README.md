@@ -88,6 +88,61 @@ A containerized ROS 2 Humble + Nav2 environment is also provided
 (`docker compose up --build`, image built by CI); the compose file mounts the
 repository into the container workspace.
 
+## Real-model evaluation: qwen2.5:7b-instruct
+
+Roadmap step 3, run against a real model: `qwen2.5:7b-instruct` served
+locally by Ollama at temperature 0, prompted once per scenario over 40 seeded
+maps (coarse ASCII view; verification runs on the fine grid the LLM never
+sees). The committed dataset is complete and replayable: prompts and raw
+responses ([llm_eval/responses/](llm_eval/responses/)), parsed trajectories,
+scenario grids, and the exact evaluator. The accounting taxonomy was
+committed before any output was evaluated
+([f9e2635](https://github.com/munawarkazmi/ros2-llm-safety-verifier/commit/f9e2635)).
+
+Output of `core/build/llm_eval` (verbatim):
+
+```text
+model under evaluation: qwen2.5:7b-instruct (temperature 0)
+responses: 40 total
+  parse_failure  0
+  degenerate     0
+  safe_passed    5
+  safe_rejected  0   (false positives vs oracle)
+  unsafe_caught  35
+  unsafe_missed  0   <-- the load-bearing cell; must be 0
+evaluated as real plans: 40 of 40 responses (parse_failure and degenerate are excluded from every safety denominator and must be read alongside any catch claim)
+unsafe plans by qwen2.5:7b-instruct (temperature 0): 35 of 40 evaluated
+violation classes among verifier rejections:
+  collision          8
+  discontinuity      18
+  off_map            9
+endpoint adherence failures: 18 of 40 evaluated (task-success axis; independent of safety - the verifier speaks only to safety and no combined score is computed)
+PASS: zero missed dangers - no oracle-unsafe plan passed the verifier
+```
+
+Reading this precisely - these are facts about one 7B model at one
+temperature on n=40 scenarios, not about "LLMs":
+
+- **qwen2.5:7b-instruct proposed unsafe trajectories in 35 of its 40 plans;
+  the verifier caught all 35, passed all 5 safe ones, and missed zero** (the
+  oracle independently confirms every verdict; CI replays this from the
+  committed dataset on every push).
+- All 40 responses were real plans - no parse failures, no degenerate
+  outputs - so the catch numbers carry the full weight of the dataset.
+- The failure modes span three classes, not one: waypoint spacing violations
+  (discontinuity, 18), off-map coordinates (9), and paths through obstacles
+  or cutting corners into them (collision, 8). Two constructed classes
+  (routes into unmapped space, too-narrow gaps) were never elicited in these
+  40 scenarios; the [constructed evaluation](#evaluation-seeded-offline-harness)
+  remains the broader coverage of the check surface.
+- Separately from safety, 18 of 40 plans failed endpoint adherence (start or
+  goal not matched within 0.3 m) - a task-success observation about the
+  model, outside the verifier's remit.
+
+To reproduce collection you need any OpenAI-compatible endpoint
+(`llm_eval/collect.py`); evaluation from the committed raw data is fully
+deterministic (`llm_eval/parse.py`, then `core/build/llm_eval`).
+
 ## ROS 2 node
 
 `verifier_node` wraps the tested core as the runtime gate
@@ -126,8 +181,9 @@ is part of the hardware-trial roadmap step.
    false-positive numbers on constructed hallucination classes.
 2. **Done - verifier node**: the runtime gate between `proposed_*` and
    `verified_*` topics, reusing the tested core (build-verified in CI).
-3. Evaluation against real LLM-generated trajectories (prompted plans over
-   these maps), published with the prompts and raw outputs.
+3. **Done - real-model evaluation** (above): qwen2.5:7b-instruct over 40
+   scenarios, raw prompts and responses committed, replayed in CI. Further
+   models can be added with the same pipeline as access allows.
 4. Hardware trials (TurtleBot3 + Jetson Orin Nano), published together with
    the raw rosbags and analysis scripts.
 

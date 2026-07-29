@@ -31,6 +31,16 @@ jobs:
           name: verifier-eval-ci
           path: /tmp/results/verifier_eval_ci.csv
 
+      # Replays the committed qwen2.5:7b-instruct dataset; fails if any
+      # oracle-unsafe plan passes the verifier (the load-bearing cell).
+      - name: Re-evaluate committed LLM dataset
+        run: |
+          make -C core llm-tools
+          python3 llm_eval/parse.py --name qwen2.5-7b-instruct
+          core/build/llm_eval --parsed llm_eval/parsed/qwen2.5-7b-instruct.txt \
+            --scenarios llm_eval/scenarios \
+            --out /tmp/results/llm_eval_ci.csv
+
   ros:
     name: ROS 2 node build (Humble)
     runs-on: ubuntu-latest

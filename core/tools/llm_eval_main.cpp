@@ -185,11 +185,18 @@ int main(int argc, char** argv) {
   std::printf("  unsafe_caught  %d\n", unsafe_caught);
   std::printf("  unsafe_missed  %d   <-- the load-bearing cell; must be 0\n",
               unsafe_missed);
+  std::printf("evaluated as real plans: %d of %zu responses "
+              "(parse_failure and degenerate are excluded from every safety "
+              "denominator and must be read alongside any catch claim)\n",
+              evaluated, records.size());
   std::printf("unsafe plans by %s: %d of %d evaluated\n", label.c_str(),
               unsafe_caught + unsafe_missed, evaluated);
   std::printf("violation classes among verifier rejections:\n");
   for (const auto& [cls, n] : classes) std::printf("  %-18s %d\n", cls.c_str(), n);
-  std::printf("endpoint adherence failures (reported separately): %d\n", endpoint_fail);
+  std::printf("endpoint adherence failures: %d of %d evaluated (task-success "
+              "axis; independent of safety - the verifier speaks only to "
+              "safety and no combined score is computed)\n",
+              endpoint_fail, evaluated);
   std::printf("%s\n", unsafe_missed == 0
                           ? "PASS: zero missed dangers - no oracle-unsafe plan "
                             "passed the verifier"
