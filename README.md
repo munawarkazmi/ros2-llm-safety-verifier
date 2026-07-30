@@ -90,7 +90,7 @@ A containerized ROS 2 Humble + Nav2 environment is also provided
 (`docker compose up --build`, image built by CI); the compose file mounts the
 repository into the container workspace.
 
-## Real-model evaluation: qwen2.5:7b-instruct
+## Real-model evaluation: qwen2.5:7b-instruct, then llama-3.3-70b-versatile
 
 Roadmap step 3, run against a real model: `qwen2.5:7b-instruct` served
 locally by Ollama at temperature 0, prompted once per scenario over 40 seeded
@@ -149,8 +149,61 @@ temperature on n=40 scenarios, not about "LLMs":
   goal not matched within 0.3 m) - a task-success observation about the
   model, outside the verifier's remit.
 
+### The same harness on a second model: llama-3.3-70b-versatile
+
+Same 40 scenarios, same prompts, same evaluator; `llama-3.3-70b-versatile`
+hosted by Groq at temperature 0, raw responses committed alongside qwen's
+and replayed in CI identically. Output of `core/build/llm_eval` (verbatim):
+
+```text
+model under evaluation: llama-3.3-70b-versatile (temperature 0)
+responses: 40 total
+  parse_failure  0
+  degenerate     0
+  safe_passed    8
+  safe_rejected  0   (false positives vs oracle)
+  unsafe_caught  32
+  unsafe_missed  0   <-- the load-bearing cell; must be 0
+evaluated as real plans: 40 of 40 responses (parse_failure and degenerate are excluded from every safety denominator and must be read alongside any catch claim)
+unsafe plans by llama-3.3-70b-versatile (temperature 0): 32 of 40 evaluated
+violation classes among verifier rejections:
+  collision          17
+  discontinuity      12
+  off_map            1
+  unknown_region     2
+endpoint adherence failures: 0 of 40 evaluated (task-success axis; independent of safety - the verifier speaks only to safety and no combined score is computed)
+PASS: zero missed dangers - no oracle-unsafe plan passed the verifier
+```
+
+Per model, side by side - counts on the same n=40, never averaged into
+"LLMs":
+
+| | qwen2.5:7b-instruct | llama-3.3-70b-versatile |
+|---|---|---|
+| unsafe plans (of 40 evaluated) | 35 | 32 |
+| unsafe caught / missed | 35 / 0 | 32 / 0 |
+| safe passed / rejected | 5 / 0 | 8 / 0 |
+| endpoint adherence failures | 18 | 0 |
+| violation classes | discontinuity 18, off_map 9, collision 8 | collision 17, discontinuity 12, unknown_region 2, off_map 1 |
+
+Reading the second row of facts precisely:
+
+- **llama-3.3-70b-versatile proposed unsafe trajectories in 32 of its 40
+  plans; the verifier caught all 32, passed all 8 safe ones, and missed
+  zero.** The load-bearing cell is zero for both committed models.
+- Its failure profile differs in kind, not only in count: collision
+  dominates (17 against qwen's 8), off-map coordinates almost vanish (1
+  against 9), and its plans elicited `unknown_region` (2) - one of the two
+  check classes qwen's plans never touched. Too-narrow gaps remain
+  unelicited by any committed model run.
+- Zero endpoint adherence failures against qwen's 18: the 70B model's
+  plans start and end where asked, they just pass through obstacles on the
+  way. Unsafe-but-on-target is exactly the failure class a runtime gate
+  exists for.
+
 To reproduce collection you need any OpenAI-compatible endpoint
-(`llm_eval/collect.py`); evaluation from the committed raw data is fully
+(`llm_eval/collect.py`; `--api-key-env` and `--min-interval-s` cover hosted,
+rate-limited endpoints); evaluation from the committed raw data is fully
 deterministic (`llm_eval/parse.py`, then `core/build/llm_eval`).
 
 ## ROS 2 node
@@ -191,9 +244,10 @@ is part of the hardware-trial roadmap step.
    false-positive numbers on constructed hallucination classes.
 2. **Done - verifier node**: the runtime gate between `proposed_*` and
    `verified_*` topics, reusing the tested core (build-verified in CI).
-3. **Done - real-model evaluation** (above): qwen2.5:7b-instruct over 40
-   scenarios, raw prompts and responses committed, replayed in CI. Further
-   models can be added with the same pipeline as access allows.
+3. **Done - real-model evaluation** (above): qwen2.5:7b-instruct and
+   llama-3.3-70b-versatile over the same 40 scenarios, raw prompts and
+   responses committed, both replayed in CI. Further models can be added
+   with the same pipeline as access allows.
 4. Hardware trials (TurtleBot3 + Jetson Orin Nano), published together with
    the raw rosbags and analysis scripts.
 
