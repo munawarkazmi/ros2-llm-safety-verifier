@@ -76,6 +76,15 @@ violation class plus a fuzz invariant - every trajectory the verifier calls
 safe is re-checked by the finer-sampled oracle (1,914 safe verdicts
 cross-checked, printed by the test).
 
+## Plain-language guide
+
+For a non-specialist reader there is a four-page guide,
+[docs/explainer/explainer.pdf](docs/explainer/explainer.pdf), which leads on
+the unsafe-but-on-target finding, explains why the checker is measured in
+both directions before any model verdict counts, and states the retraction
+plainly. Its source is committed alongside it and builds with `latexmk -pdf
+explainer.tex`.
+
 ## Quick start (no ROS required)
 
 ```bash
